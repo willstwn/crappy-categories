@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crappy Categories</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ===================== SETUP ===================== -->
+  <main id="setup" class="screen active">
+    <div class="card">
+      <img id="logo" class="logo" alt="" hidden>
+      <h1 class="title"><span>Categories</span></h1>
+      <p class="subtitle">vibe coded by your favorite connect leader</p>
+
+      <form id="setup-form" autocomplete="off">
+        <label class="field">
+          <span>Category</span>
+          <input id="category" type="text" maxlength="80" placeholder="e.g. Things you find in a kitchen" autofocus>
+        </label>
+
+        <div class="field">
+          <span>Players <small>— in turn order, going round the circle</small></span>
+          <ol id="player-list" class="player-list"></ol>
+          <div class="add-player">
+            <input id="player-name" type="text" maxlength="24" placeholder="Name, then Enter" hidden>
+            <button type="button" id="add-player" class="btn-ghost btn-small">+ Add player</button>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="field">
+            <span>Time limit (seconds)</span>
+            <input id="time-limit" type="number" step="0.1" min="0.5">
+          </label>
+
+          <label class="field field-narrow">
+            <span>Lives</span>
+            <input id="lives" type="number" step="1" min="1" max="99">
+          </label>
+
+          <label class="toggle">
+            <input id="pause-after-fail" type="checkbox">
+            <span class="switch" aria-hidden="true"></span>
+            <span>Pause after fail</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary btn-start">Start round</button>
+      </form>
+
+      <ul class="controls">
+        <li><kbd>A</kbd>–<kbd>Z</kbd> lock a letter</li>
+        <li><kbd>Space</kbd> pause / resume</li>
+        <li><kbd>⌫</kbd> undo last</li>
+        <li><kbd>Esc</kbd> exit (while paused)</li>
+      </ul>
+    </div>
+  </main>
+
+  <!-- ===================== GAME ===================== -->
+  <main id="game" class="screen">
+    <header class="game-header">
+      <div class="eyebrow">Category</div>
+      <h2 id="category-display"></h2>
+    </header>
+
+    <div id="turn" class="turn" hidden>
+      <div class="turn-name"><span id="turn-name"></span>'s turn</div>
+      <div class="turn-next">next: <span id="turn-next"></span></div>
+    </div>
+
+    <section class="timer">
+      <div id="timer-number">0.0</div>
+      <div class="timer-bar"><div id="timer-fill"></div></div>
+    </section>
+
+    <section id="letters" class="letters"></section>
+
+    <aside id="roster" class="roster" hidden></aside>
+
+    <footer class="hints">
+      <span id="letters-left"></span>
+      <span><kbd>Space</kbd> pause</span>
+      <span><kbd>⌫</kbd> undo</span>
+    </footer>
+
+    <div id="overlay" class="overlay" hidden></div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
