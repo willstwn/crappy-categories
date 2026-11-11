@@ -24,6 +24,7 @@ const CONFIG = {
       'assets/sounds/buzzer-1.mp3',
       'assets/sounds/buzzer-2.mp3',
       'assets/sounds/buzzer-3.mp3',
+      'assets/sounds/buzzer-4.mp3',
     ],
     win:       'assets/sounds/win.mp3',       // all 26 letters used
   },
@@ -40,10 +41,10 @@ const CONFIG = {
     pauseAfterFail: true,
     lives: 3,
     players: [], // names, in turn order
+    volume: 0.8, // 0..1 — adjustable with the slider on the setup screen
   },
 
   countdownSeconds: 3, // pre-round 3-2-1
   firstTurnBonus: 1,   // extra seconds on the first turn (the GO! overlay covers the screen briefly)
   warnSeconds: 3,      // timer turns red + ticks below this
-  volume: 0.8,         // 0..1, for sound files
 };

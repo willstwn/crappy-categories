@@ -18,7 +18,7 @@ different extension? Edit the `buzzer` list in `js/config.js`. Any listed file t
 missing is skipped.
 
 Any sound with no files at all falls back to a built-in synth beep, so you can replace
-them one at a time. Paths and volume are set in `js/config.js`.
+them one at a time. Paths and the default volume are set in `js/config.js`; the slider on the setup screen adjusts volume per device.
 
 ## Credits
 

@@ -19,6 +19,9 @@
     playerList: $('player-list'),
     playerName: $('player-name'),
     addPlayer: $('add-player'),
+    volume: $('volume'),
+    volumeOut: $('volume-out'),
+    testSound: $('test-sound'),
     logo: $('logo'),
     categoryDisplay: $('category-display'),
     turn: $('turn'),
@@ -29,6 +32,7 @@
     letters: $('letters'),
     roster: $('roster'),
     lettersLeft: $('letters-left'),
+    status: $('status'),
     overlay: $('overlay'),
   };
 
@@ -51,7 +55,12 @@
   function loadSettings() {
     try {
       const s = { ...CONFIG.defaults, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') };
-      return { ...s, players: Array.isArray(s.players) ? [...s.players] : [] };
+      const v = Number(s.volume);
+      return {
+        ...s,
+        players: Array.isArray(s.players) ? [...s.players] : [],
+        volume: Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : CONFIG.defaults.volume,
+      };
     } catch {
       return { ...CONFIG.defaults, players: [...CONFIG.defaults.players] };
     }
@@ -66,6 +75,8 @@
     els.timeLimit.value = settings.timeLimit;
     els.lives.value = settings.lives;
     els.pauseAfterFail.checked = settings.pauseAfterFail;
+    els.volume.value = Math.round(settings.volume * 100);
+    els.volumeOut.textContent = `${els.volume.value}%`;
     renderPlayerList();
   }
 
@@ -149,6 +160,20 @@
     }, 150);
   });
 
+  // ---------- setup: volume ----------
+
+  els.volume.addEventListener('input', () => {
+    settings.volume = els.volume.value / 100;
+    els.volumeOut.textContent = `${els.volume.value}%`;
+    Sound.setVolume(settings.volume);
+  });
+  els.volume.addEventListener('change', saveSettings); // once the slider is let go
+
+  els.testSound.addEventListener('click', () => {
+    Sound.unlock();
+    Sound.play('go');
+  });
+
   // ---------- setup: misc ----------
 
   function buildTiles() {
@@ -196,17 +221,22 @@
     els.overlay.dataset.kind = '';
   }
 
-  function showPaused(title, detail = '') {
-    showOverlay('paused', `
-      <div class="panel">
-        <h2>${title}</h2>
-        ${detail ? `<p class="panel-detail">${detail}</p>` : ''}
-        <div class="panel-actions">
-          <button class="btn-primary" data-action="resume"><kbd>Space</kbd> Resume</button>
-          <button class="btn-ghost" data-action="exit"><kbd>Esc</kbd> Exit to setup</button>
-        </div>
-        <p class="panel-hint">Press a letter to lock it in · <kbd>⌫</kbd> undo last</p>
-      </div>`);
+  // ---------- pause banner (under the timer, doesn't cover the board) ----------
+
+  function showStatus(kind, title, detail = '') {
+    els.status.dataset.kind = kind;
+    els.status.innerHTML = `
+      <span class="status-tag">${title}</span>
+      ${detail ? `<span class="status-detail">${detail}</span>` : ''}
+      <span class="status-actions">
+        <button class="btn-ghost btn-small" data-action="resume"><kbd>Space</kbd> Resume</button>
+        <button class="btn-ghost btn-small" data-action="exit"><kbd>Esc</kbd> Exit</button>
+      </span>`;
+  }
+
+  function clearStatus() {
+    els.status.innerHTML = '';
+    els.status.dataset.kind = '';
   }
 
   // ---------- players during a game ----------
@@ -286,10 +316,12 @@
     countdownTimers = [];
   }
 
-  function pause(title = 'Paused', detail = '') {
+  function pause(kind = 'paused', title = '⏸ Paused', detail = '') {
     clearCountdown();
+    if (els.overlay.dataset.kind === 'countdown') hideOverlay(); // paused during "GO!"
     state = 'paused';
-    showPaused(title, detail);
+    els.game.classList.add('paused');
+    showStatus(kind, title, detail);
   }
 
   function resume() {
@@ -299,7 +331,8 @@
     }
     state = 'running';
     lastFrame = performance.now();
-    hideOverlay();
+    els.game.classList.remove('paused');
+    clearStatus();
   }
 
   function timeUp() {
@@ -323,12 +356,12 @@
       detail = p.lives > 0
         ? `${esc(p.name)} loses a life — ${p.lives} left`
         : `${esc(p.name)} is out!`;
-      detail += `<br>Up next: <strong>${esc(players[turn].name)}</strong>`;
+      detail += ` · Up next: <strong>${esc(players[turn].name)}</strong>`;
     }
 
     if (settings.pauseAfterFail) {
       expired = true;
-      pause("Time's up!", detail);
+      pause('timeup', "Time's up!", detail);
     } else {
       remaining = settings.timeLimit;
     }
@@ -351,6 +384,7 @@
     remaining = settings.timeLimit;
     expired = false;
     advanceTurn();
+    if (state === 'paused') pause(); // a "Time's up!" banner would now be stale
 
     if (used.size === LETTERS.length) finish('Round complete!', 'genuinely how');
   }
@@ -370,10 +404,13 @@
     remaining = settings.timeLimit; // the restored player gets a fresh turn
     expired = false;
     renderTurn();
+    if (state === 'paused') pause();
   }
 
   function finish(title, detail) {
     state = 'done';
+    els.game.classList.remove('paused');
+    clearStatus();
     Sound.play('win');
     showOverlay('done', `
       <div class="panel">
@@ -389,6 +426,8 @@
     clearCountdown();
     state = 'setup';
     hideOverlay();
+    els.game.classList.remove('paused');
+    clearStatus();
     fillForm();
     showScreen('setup');
     els.category.focus();
@@ -482,12 +521,14 @@
     }
   });
 
-  els.overlay.addEventListener('mousedown', (e) => e.preventDefault());
-  els.overlay.addEventListener('click', (e) => {
-    const action = e.target.closest('[data-action]')?.dataset.action;
-    if (action === 'resume') resume();
-    if (action === 'exit') exitToSetup();
-  });
+  for (const el of [els.overlay, els.status]) {
+    el.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus off buttons (Space would click them)
+    el.addEventListener('click', (e) => {
+      const action = e.target.closest('[data-action]')?.dataset.action;
+      if (action === 'resume' && state === 'paused') resume();
+      if (action === 'exit') exitToSetup();
+    });
+  }
 
   els.form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -500,5 +541,6 @@
   fillForm();
   loadImages();
   Sound.init();
+  Sound.setVolume(settings.volume);
   requestAnimationFrame((now) => { lastFrame = now; frame(now); });
 })();

@@ -51,6 +51,15 @@
           </label>
         </div>
 
+        <div class="field">
+          <span>Volume</span>
+          <div class="volume">
+            <input id="volume" type="range" min="0" max="100" step="1" aria-label="Volume">
+            <output id="volume-out" for="volume"></output>
+            <button type="button" id="test-sound" class="btn-ghost btn-small">▶ Test sound</button>
+          </div>
+        </div>
+
         <button type="submit" class="btn-primary btn-start">Start round</button>
       </form>
 
@@ -78,6 +87,7 @@
     <section class="timer">
       <div id="timer-number">0.0</div>
       <div class="timer-bar"><div id="timer-fill"></div></div>
+      <div id="status" class="status" aria-live="polite"></div>
     </section>
 
     <section id="letters" class="letters"></section>
